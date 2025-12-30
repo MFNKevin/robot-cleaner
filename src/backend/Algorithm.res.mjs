@@ -2,17 +2,102 @@
 
 import * as Grid from "./Grid.res.mjs";
 import * as Robot from "./Robot.res.mjs";
+import * as Belt_Array from "@rescript/runtime/lib/es6/Belt_Array.js";
+
+function isValidPosition(sim, pos) {
+  let match = Grid.getCell(sim.grid, pos);
+  if (match !== undefined && match !== "Wall") {
+    return Grid.isInside(sim.grid, pos);
+  } else {
+    return false;
+  }
+}
 
 function simpleStep(sim) {
   let nextPos = Robot.nextPosition(sim.robot);
-  if (Grid.isInside(sim.grid, nextPos)) {
+  let match = Grid.isInside(sim.grid, nextPos);
+  let match$1 = Grid.getCell(sim.grid, nextPos);
+  if (match && match$1 !== undefined && match$1 !== "Wall") {
     return "MoveForward";
   } else {
     return "TurnRight";
   }
 }
 
+function smartStep(sim) {
+  let nextPos = Robot.nextPosition(sim.robot);
+  let leftRobot = Robot.turnLeft(sim.robot);
+  let leftPos = Robot.nextPosition(leftRobot);
+  let match = isValidPosition(sim, nextPos);
+  let match$1 = isValidPosition(sim, leftPos);
+  if (match) {
+    return "MoveForward";
+  } else if (match$1) {
+    return "TurnLeft";
+  } else {
+    return "TurnRight";
+  }
+}
+
+function getVisitCount(sim, pos) {
+  if (!(pos.y >= 0 && pos.y < sim.visited.length)) {
+    return 999;
+  }
+  let row = Belt_Array.getExn(sim.visited, pos.y);
+  if (pos.x >= 0 && pos.x < row.length) {
+    return Belt_Array.getExn(row, pos.x);
+  } else {
+    return 999;
+  }
+}
+
+function explorerStep(sim) {
+  let nextPos = Robot.nextPosition(sim.robot);
+  let leftRobot = Robot.turnLeft(sim.robot);
+  let leftPos = Robot.nextPosition(leftRobot);
+  let rightRobot = Robot.turnRight(sim.robot);
+  let rightPos = Robot.nextPosition(rightRobot);
+  let frontValid = isValidPosition(sim, nextPos);
+  let leftValid = isValidPosition(sim, leftPos);
+  let rightValid = isValidPosition(sim, rightPos);
+  let frontVisits = frontValid ? getVisitCount(sim, nextPos) : 999;
+  let leftVisits = leftValid ? getVisitCount(sim, leftPos) : 999;
+  let rightVisits = rightValid ? getVisitCount(sim, rightPos) : 999;
+  let currentVisits = getVisitCount(sim, sim.robot.position);
+  let isStuck = currentVisits > 10;
+  if (frontVisits === 0) {
+    return "MoveForward";
+  }
+  if (leftVisits === 0) {
+    return "TurnLeft";
+  }
+  if (rightVisits === 0) {
+    return "TurnRight";
+  }
+  if (!isStuck) {
+    if (frontVisits < leftVisits && frontVisits < rightVisits && frontValid) {
+      return "MoveForward";
+    } else if (leftVisits <= rightVisits && leftValid) {
+      return "TurnLeft";
+    } else {
+      return "TurnRight";
+    }
+  }
+  let random = sim.steps % 3;
+  if (random === 0 && frontValid) {
+    return "MoveForward";
+  } else if (random === 1 && leftValid || !rightValid) {
+    return "TurnLeft";
+  } else {
+    return "TurnRight";
+  }
+}
+
 export {
+  isValidPosition,
   simpleStep,
+  smartStep,
+  getVisitCount,
+  explorerStep,
 }
 /* No side effect */

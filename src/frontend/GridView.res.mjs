@@ -8,10 +8,12 @@ import * as JsxRuntime from "react/jsx-runtime";
 function GridView(props) {
   let robot = props.robot;
   let grid = props.grid;
-  let gridSize = grid.length;
-  let cells = Stdlib_Array.make(gridSize * gridSize | 0, null);
-  for (let y = 0; y < gridSize; ++y) {
-    for (let x = 0; x < gridSize; ++x) {
+  let gridHeight = grid.length;
+  let row = grid[0];
+  let gridWidth = row !== undefined ? row.length : 0;
+  let cells = Stdlib_Array.make(gridHeight * gridWidth | 0, null);
+  for (let y = 0; y < gridHeight; ++y) {
+    for (let x = 0; x < gridWidth; ++x) {
       let pos = {
         x: x,
         y: y
@@ -19,7 +21,7 @@ function GridView(props) {
       let isRobot = robot.position.x === x && robot.position.y === y;
       let state = Grid.getCell(grid, pos);
       let cellState = state !== undefined ? state : "Dirty";
-      let index = (y * gridSize | 0) + x | 0;
+      let index = (y * gridWidth | 0) + x | 0;
       let robotDir = isRobot ? robot.direction : undefined;
       cells[index] = JsxRuntime.jsx(CellView.make, {
         cellState: cellState,
@@ -32,7 +34,7 @@ function GridView(props) {
     children: cells,
     className: "inline-grid gap-1 p-6 bg-gray-100 rounded-lg shadow-md",
     style: {
-      gridTemplateColumns: `repeat(` + gridSize.toString() + `, minmax(0, 1fr))`
+      gridTemplateColumns: `repeat(` + gridWidth.toString() + `, minmax(0, 1fr))`
     }
   });
 }

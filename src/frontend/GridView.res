@@ -1,16 +1,21 @@
-//Affichage de la grille
+//Affichage de la grille (support rectangulaire)
 
 open Types
 
 @react.component
 let make = (~grid: Types.grid, ~robot: Types.robot) => {
-  let gridSize = grid->Array.length
+  /* Support des grilles rectangulaires (N×M) */
+  let gridHeight = grid->Array.length
+  let gridWidth = switch grid->Array.get(0) {
+  | Some(row) => row->Array.length
+  | None => 0
+  }
 
   /* Génère une cellule pour chaque position */
-  let cells = Array.make(~length=gridSize * gridSize, React.null)
+  let cells = Array.make(~length=gridHeight * gridWidth, React.null)
 
-  for y in 0 to gridSize - 1 {
-    for x in 0 to gridSize - 1 {
+  for y in 0 to gridHeight - 1 {
+    for x in 0 to gridWidth - 1 {
       let pos = {x, y}
       let isRobot = robot.position.x === x && robot.position.y === y
 
@@ -20,7 +25,7 @@ let make = (~grid: Types.grid, ~robot: Types.robot) => {
         | None => Dirty
         }
 
-      let index = y * gridSize + x
+      let index = y * gridWidth + x
       let robotDir = if isRobot {
         Some(robot.direction)
       } else {
@@ -40,7 +45,7 @@ let make = (~grid: Types.grid, ~robot: Types.robot) => {
   <div
     className="inline-grid gap-1 p-6 bg-gray-100 rounded-lg shadow-md"
     style={Obj.magic({
-      "gridTemplateColumns": `repeat(${gridSize->Int.toString}, minmax(0, 1fr))`,
+      "gridTemplateColumns": `repeat(${gridWidth->Int.toString}, minmax(0, 1fr))`,
     })}>
     {cells->React.array}
   </div>

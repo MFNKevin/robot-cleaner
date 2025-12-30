@@ -8,8 +8,10 @@ type position = {
 
 /* État d’une cellule */
 type cellState =
-  | Dirty
-  | Clean
+  | Empty      // Cellule vide (non encore visitée)
+  | Dirty      // Cellule sale (à nettoyer)
+  | Clean      // Cellule nettoyée
+  | Wall       // Obstacle (mur)
 
 /* Direction du robot */
 type direction =
@@ -31,4 +33,8 @@ type robot = {
 type simulation = {
   grid: grid,
   robot: robot,
+  battery: int,        // Batterie restante (en nombre de pas)
+  score: int,          // Score (nombre de cellules nettoyées)
+  steps: int,          // Nombre total de pas effectués
+  visited: array<array<int>>, // Nombre de fois qu'une cellule a été visitée
 }

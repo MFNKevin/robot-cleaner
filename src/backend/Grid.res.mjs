@@ -6,6 +6,20 @@ function create(size) {
   return Stdlib_Array.make(size, Stdlib_Array.make(size, "Dirty"));
 }
 
+function createWithObstacles(width, height, obstacleDensity) {
+  return Stdlib_Array.make(height, undefined).map((param, y) => Stdlib_Array.make(width, undefined).map((param, x) => {
+    if (x === 0 && y === 0) {
+      return "Dirty";
+    }
+    let random = Math.random();
+    if (random < obstacleDensity) {
+      return "Wall";
+    } else {
+      return "Dirty";
+    }
+  }));
+}
+
 function isInside(grid, pos) {
   let size = grid.length;
   if (pos.x >= 0 && pos.y >= 0 && pos.x < size) {
@@ -29,19 +43,35 @@ function getCell(grid, pos) {
 function cleanCell(grid, pos) {
   let row = grid[pos.y];
   if (row === undefined) {
-    return;
+    return false;
   }
   let match = row[pos.x];
-  if (match !== undefined) {
-    row[pos.x] = "Clean";
-    return;
+  if (match === undefined) {
+    return false;
   }
+  if (match !== "Dirty") {
+    return false;
+  }
+  row[pos.x] = "Clean";
+  return true;
+}
+
+function countDirtyCells(grid) {
+  return Stdlib_Array.reduce(grid, 0, (acc, row) => acc + Stdlib_Array.reduce(row, 0, (rowAcc, cell) => {
+    if (cell === "Dirty") {
+      return rowAcc + 1 | 0;
+    } else {
+      return rowAcc;
+    }
+  }) | 0);
 }
 
 export {
   create,
+  createWithObstacles,
   isInside,
   getCell,
   cleanCell,
+  countDirtyCells,
 }
 /* No side effect */

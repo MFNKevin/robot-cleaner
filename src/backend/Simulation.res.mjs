@@ -3,42 +3,99 @@
 import * as Grid from "./Grid.res.mjs";
 import * as Robot from "./Robot.res.mjs";
 import * as Algorithm from "./Algorithm.res.mjs";
+import * as Belt_Array from "@rescript/runtime/lib/es6/Belt_Array.js";
+import * as Stdlib_Array from "@rescript/runtime/lib/es6/Stdlib_Array.js";
 
-function create(size) {
-  let initialGrid = Grid.create(size);
+function create(width, height, obstacleDensity) {
+  let initialGrid = Grid.createWithObstacles(width, height, obstacleDensity);
   let initialRobot = Robot.create({
     x: 0,
     y: 0
   });
+  let visited = Stdlib_Array.make(height, []);
+  for (let i = 0; i < height; ++i) {
+    visited[i] = Stdlib_Array.make(width, 0);
+  }
   return {
     grid: initialGrid,
-    robot: initialRobot
+    robot: initialRobot,
+    battery: 5000,
+    score: 0,
+    steps: 0,
+    visited: visited
   };
+}
+
+function createDefault() {
+  return create(8, 8, 0.15);
 }
 
 function step(sim) {
-  Grid.cleanCell(sim.grid, sim.robot.position);
-  let action = Algorithm.simpleStep(sim);
-  let updatedRobot;
+  if (sim.battery <= 0) {
+    return sim;
+  }
+  let match = sim.robot.position;
+  let y = match.y;
+  let x = match.x;
+  Belt_Array.setExn(Belt_Array.getExn(sim.visited, y), x, Belt_Array.getExn(Belt_Array.getExn(sim.visited, y), x) + 1 | 0);
+  let wasCleaned = Grid.cleanCell(sim.grid, sim.robot.position);
+  let action = Algorithm.explorerStep(sim);
+  let match$1;
   switch (action) {
     case "MoveForward" :
-      updatedRobot = Robot.moveForward(sim.robot);
+      match$1 = [
+        Robot.moveForward(sim.robot),
+        1
+      ];
       break;
     case "TurnLeft" :
-      updatedRobot = Robot.turnLeft(sim.robot);
+      match$1 = [
+        Robot.turnLeft(sim.robot),
+        0
+      ];
       break;
     case "TurnRight" :
-      updatedRobot = Robot.turnRight(sim.robot);
+      match$1 = [
+        Robot.turnRight(sim.robot),
+        0
+      ];
       break;
   }
+  let newScore = wasCleaned ? sim.score + 10 | 0 : sim.score;
   return {
     grid: sim.grid,
-    robot: updatedRobot
+    robot: match$1[0],
+    battery: sim.battery - match$1[1] | 0,
+    score: newScore,
+    steps: sim.steps + 1 | 0,
+    visited: sim.visited
   };
 }
 
+function isFinished(sim) {
+  if (sim.battery <= 0) {
+    return true;
+  } else {
+    return Grid.countDirtyCells(sim.grid) === 0;
+  }
+}
+
+let defaultBattery = 5000;
+
+let defaultWidth = 8;
+
+let defaultHeight = 8;
+
+let defaultObstacleDensity = 0.15;
+
 export {
+  defaultBattery,
+  defaultWidth,
+  defaultHeight,
+  defaultObstacleDensity,
   create,
+  createDefault,
   step,
+  isFinished,
 }
 /* No side effect */

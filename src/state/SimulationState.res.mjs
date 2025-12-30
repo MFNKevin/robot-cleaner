@@ -2,43 +2,126 @@
 
 import * as React from "react";
 import * as Simulation from "../backend/Simulation.res.mjs";
-import * as Stdlib_Option from "@rescript/runtime/lib/es6/Stdlib_Option.js";
 import * as Primitive_option from "@rescript/runtime/lib/es6/Primitive_option.js";
 
+function reducer(state, action) {
+  if (typeof action !== "object") {
+    switch (action) {
+      case "Tick" :
+        if (Simulation.isFinished(state.simulation)) {
+          return {
+            simulation: state.simulation,
+            isRunning: false,
+            config: state.config
+          };
+        } else {
+          return {
+            simulation: Simulation.step(state.simulation),
+            isRunning: state.isRunning,
+            config: state.config
+          };
+        }
+      case "Reset" :
+        return {
+          simulation: Simulation.create(state.config.width, state.config.height, state.config.obstacleDensity),
+          isRunning: false,
+          config: state.config
+        };
+      case "Start" :
+        return {
+          simulation: state.simulation,
+          isRunning: true,
+          config: state.config
+        };
+      case "Pause" :
+        return {
+          simulation: state.simulation,
+          isRunning: false,
+          config: state.config
+        };
+    }
+  } else {
+    if (action.TAG === "SetSize") {
+      let h = action._1;
+      let w = action._0;
+      let init = state.config;
+      let newConfig_obstacleDensity = init.obstacleDensity;
+      let newConfig = {
+        width: w,
+        height: h,
+        obstacleDensity: newConfig_obstacleDensity
+      };
+      return {
+        simulation: Simulation.create(w, h, newConfig_obstacleDensity),
+        isRunning: false,
+        config: newConfig
+      };
+    }
+    let density = action._0;
+    let init$1 = state.config;
+    let newConfig_width = init$1.width;
+    let newConfig_height = init$1.height;
+    let newConfig$1 = {
+      width: newConfig_width,
+      height: newConfig_height,
+      obstacleDensity: density
+    };
+    return {
+      simulation: Simulation.create(newConfig_width, newConfig_height, density),
+      isRunning: false,
+      config: newConfig$1
+    };
+  }
+}
+
 function useSimulationState() {
-  let match = React.useState(() => Simulation.create(5));
-  let setSim = match[1];
-  let step = () => setSim(Simulation.step);
-  let reset = () => setSim(param => Simulation.create(5));
+  let initialState_simulation = Simulation.create(8, 8, 0.2);
+  let initialState_config = {
+    width: 8,
+    height: 8,
+    obstacleDensity: 0.2
+  };
+  let initialState = {
+    simulation: initialState_simulation,
+    isRunning: false,
+    config: initialState_config
+  };
+  let match = React.useReducer(reducer, initialState);
+  let dispatch = match[1];
+  let state = match[0];
   let timerRef = React.useRef(undefined);
-  let start = () => {
-    if (!Stdlib_Option.isNone(timerRef.current)) {
-      return;
+  React.useEffect(() => {
+    if (state.isRunning) {
+      let id = setInterval(() => dispatch("Tick"), 500);
+      timerRef.current = Primitive_option.some(id);
+      return () => {
+        clearInterval(id);
+        timerRef.current = undefined;
+      };
     }
-    let id = setInterval(() => setSim(Simulation.step), 500);
-    timerRef.current = Primitive_option.some(id);
-  };
-  let pause = () => {
-    let id = timerRef.current;
-    if (id !== undefined) {
-      clearInterval(Primitive_option.valFromOption(id));
+    let id$1 = timerRef.current;
+    if (id$1 !== undefined) {
+      clearInterval(Primitive_option.valFromOption(id$1));
       timerRef.current = undefined;
-      return;
     }
-  };
+  }, [state.isRunning]);
   return [
-    match[0],
-    step,
-    reset,
-    start,
-    pause
+    state,
+    dispatch
   ];
 }
 
-let defaultSize = 5;
+let defaultWidth = 8;
+
+let defaultHeight = 8;
+
+let defaultObstacleDensity = 0.2;
 
 export {
-  defaultSize,
+  defaultWidth,
+  defaultHeight,
+  defaultObstacleDensity,
+  reducer,
   useSimulationState,
 }
 /* react Not a pure module */

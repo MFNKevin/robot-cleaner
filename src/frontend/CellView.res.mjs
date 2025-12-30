@@ -6,9 +6,25 @@ function CellView(props) {
   let robotDirection = props.robotDirection;
   let isRobot = props.isRobot;
   let cellState = props.cellState;
-  let cellStyle = isRobot ? "bg-blue-500 border-2 border-blue-700 flex items-center justify-center" : (
-      cellState === "Dirty" ? "bg-red-400 hover:bg-red-500" : "bg-green-200 hover:bg-green-300"
-    );
+  let cellStyle;
+  if (isRobot) {
+    cellStyle = "bg-blue-500 border-2 border-blue-700 flex items-center justify-center";
+  } else {
+    switch (cellState) {
+      case "Empty" :
+        cellStyle = "bg-gray-100 hover:bg-gray-200";
+        break;
+      case "Dirty" :
+        cellStyle = "bg-red-400 hover:bg-red-500";
+        break;
+      case "Clean" :
+        cellStyle = "bg-green-200 hover:bg-green-300";
+        break;
+      case "Wall" :
+        cellStyle = "bg-gray-800 border-2 border-gray-900";
+        break;
+    }
+  }
   let robotIcon;
   if (robotDirection !== undefined) {
     switch (robotDirection) {
@@ -28,9 +44,25 @@ function CellView(props) {
   } else {
     robotIcon = "🤖";
   }
-  let content = isRobot ? robotIcon : (
-      cellState === "Dirty" ? "◼" : "✓"
-    );
+  let content;
+  if (isRobot) {
+    content = robotIcon;
+  } else {
+    switch (cellState) {
+      case "Empty" :
+        content = "";
+        break;
+      case "Dirty" :
+        content = "◼";
+        break;
+      case "Clean" :
+        content = "✓";
+        break;
+      case "Wall" :
+        content = "🧱";
+        break;
+    }
+  }
   return JsxRuntime.jsx("div", {
     children: content,
     className: `w-12 h-12 border border-gray-300 flex items-center justify-center text-lg font-bold cursor-pointer transition-all duration-200 ` + cellStyle

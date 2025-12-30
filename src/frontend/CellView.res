@@ -18,6 +18,12 @@ let make = (~cellState: Types.cellState, ~isRobot: bool, ~robotDirection: option
     | (Dirty, false) =>
       /* Cellule sale : couleur rouge */
       "bg-red-400 hover:bg-red-500"
+    | (Wall, false) =>
+      /* Mur/Obstacle : couleur gris foncé */
+      "bg-gray-800 border-2 border-gray-900"
+    | (Empty, false) =>
+      /* Cellule vide : couleur gris clair */
+      "bg-gray-100 hover:bg-gray-200"
     }
 
   /* Récupère l'icône directionnelle du robot */
@@ -38,6 +44,8 @@ let make = (~cellState: Types.cellState, ~isRobot: bool, ~robotDirection: option
       switch cellState {
       | Clean => React.string("✓")
       | Dirty => React.string("◼")
+      | Wall => React.string("🧱")
+      | Empty => React.string("")
       }
     }
 
